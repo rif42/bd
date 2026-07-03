@@ -60,7 +60,29 @@
       50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 8px rgba(255,255,255,0.8); }
     }
 
-    #scene { position: relative; z-index: 1; text-align: center; padding: 20px; }
+    #photoLayer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 2s ease;
+    }
+    #photoLayer.visible { opacity: 1; }
+    .photoCard {
+      position: absolute;
+      max-width: 42vw;
+      max-height: 62vh;
+      border-radius: 18px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0;
+      filter: blur(2px) saturate(1.1);
+      transition: opacity 1.5s ease-in-out;
+      transform: translate(-50%, -50%);
+    }
+    .photoCard.visible { opacity: 0.3; }
 
     #envelopeWrapper { opacity: 0; transform: scale(0.9); transition: opacity 3s ease, transform 3s ease; }
     #envelopeWrapper.show { opacity: 1; transform: scale(1); }
@@ -127,6 +149,11 @@
 </head>
 <body>
   <div id="nebula"></div>
+  <div id="photoLayer">
+    <div class="photoCard" data-slot="0"></div>
+    <div class="photoCard" data-slot="1"></div>
+    <div class="photoCard" data-slot="2"></div>
+  </div>
   <div id="starfield"></div>
 
   <div id="scene">
@@ -176,6 +203,96 @@
     const messageText = document.getElementById('messageText');
     const endHint = document.getElementById('endHint');
     const music = document.getElementById('bgMusic');
+
+    const photos = [
+      "img/DSC02236.webp", "img/IMG_20250813_130339_196.webp", "img/DSC02189.webp",
+      "img/DSC02171.webp", "img/DSC02165.webp", "img/DSC02153.webp", "img/DSC02144.webp",
+      "img/DSC02119.webp", "img/DSC02371.webp", "img/DSC02353.webp", "img/DSC02350.webp",
+      "img/DSC02346.webp", "img/DSC02343.webp", "img/DSC02305.webp", "img/DSC02294.webp",
+      "img/DSC02268.webp", "img/DSC02252.webp", "img/DSC02248.webp", "img/DSC02239.webp",
+      "img/DSC03477.webp", "img/DSC03470.webp", "img/DSC03455.webp", "img/DSC02386.webp",
+      "img/DSC02383.webp", "img/IMG_20250114_143035_773.webp", "img/IMG_20250114_143009_489.webp",
+      "img/DSC03480.webp", "img/IMG_20250114_143118_874.webp", "img/IMG_20250707_151102_992.webp",
+      "img/DSC01233.webp", "img/DSC01305.webp", "img/DSC01338.webp", "img/DSC01260.webp",
+      "img/DSC02105.webp", "img/DSC01295.webp"
+    ];
+
+    const photoLayer = document.getElementById('photoLayer');
+    const slots = document.querySelectorAll('.photoCard');
+    const slotState = [{ img: null, x: 0, y: 0, w: 0, h: 0 }, { img: null, x: 0, y: 0, w: 0, h: 0 }, { img: null, x: 0, y: 0, w: 0, h: 0 }];
+
+    function overlapTooMuch(a, b) {
+      const dx = Math.abs(a.x - b.x);
+      const dy = Math.abs(a.y - b.y);
+      const minW = Math.min(a.w, b.w) * 0.55;
+      const minH = Math.min(a.h, b.h) * 0.55;
+      return dx < minW && dy < minH;
+    }
+
+    function randomRange(min, max) { return min + Math.random() * (max - min); }
+
+    function placeCard(i) {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const w = randomRange(Math.min(260, vw * 0.28), Math.min(520, vw * 0.48));
+      const h = randomRange(Math.min(320, vh * 0.35), Math.min(700, vh * 0.65));
+      let attempts = 0;
+      let x, y;
+      do {
+        x = randomRange(vw * 0.25, vw * 0.75);
+        y = randomRange(vh * 0.2, vh * 0.8);
+        slotState[i].x = x;
+        slotState[i].y = y;
+        slotState[i].w = w;
+        slotState[i].h = h;
+        attempts++;
+      } while (attempts < 60 && ([0, 1, 2].filter(j => j !== i).some(j => overlapTooMuch(slotState[i], slotState[j]))));
+
+      const card = slots[i];
+      card.style.width = w + 'px';
+      card.style.height = h + 'px';
+      card.style.left = x + 'px';
+      card.style.top = y + 'px';
+    }
+
+    function randomPhoto(exclude) {
+      let p;
+      do { p = photos[Math.floor(Math.random() * photos.length)]; }
+      while (exclude.includes(p));
+      return p;
+    }
+
+    function changeSlot(i) {
+      const exclude = [slotState[(i + 1) % 3].img, slotState[(i + 2) % 3].img].filter(Boolean);
+      const next = randomPhoto(exclude);
+      slots[i].style.backgroundImage = `url('${next}')`;
+      slotState[i].img = next;
+    }
+
+    function scheduleSlot(i) {
+      const showDelay = 3000 + Math.random() * 7000;
+      setTimeout(() => {
+        slots[i].classList.remove('visible');
+        setTimeout(() => {
+          placeCard(i);
+          changeSlot(i);
+          requestAnimationFrame(() => {
+            slots[i].classList.add('visible');
+          });
+          scheduleSlot(i);
+        }, 1600);
+      }, showDelay);
+    }
+
+    function revealPhotos() {
+      [0, 1, 2].forEach(i => placeCard(i));
+      slots.forEach((slot, i) => {
+        changeSlot(i);
+        setTimeout(() => slot.classList.add('visible'), 100);
+        scheduleSlot(i);
+      });
+      photoLayer.classList.add('visible');
+    }
 
     function makeStars(count) {
       for (let i = 0; i < count; i++) {
@@ -229,6 +346,7 @@
       setTimeout(() => {
         envelopeWrapper.style.opacity = 0;
         envelopeWrapper.style.transform = 'scale(1.1)';
+        revealPhotos();
         messageBox.classList.add('active');
         setTimeout(() => endHint.classList.add('show'), 1200);
         showMessage();
