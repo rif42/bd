@@ -209,6 +209,14 @@
       "img/DSC02105.webp", "img/DSC01295.webp"
     ];
 
+    function preloadImages(urls) {
+      urls.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+    }
+    preloadImages(photos);
+
     const photoLayer = document.getElementById('photoLayer');
     const slots = document.querySelectorAll('.photoCard');
     const slotState = [{ img: null, x: 0, y: 0, w: 0, h: 0 }, { img: null, x: 0, y: 0, w: 0, h: 0 }, { img: null, x: 0, y: 0, w: 0, h: 0 }];
