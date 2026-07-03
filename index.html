@@ -78,7 +78,7 @@
       background-repeat: no-repeat;
       background-position: center;
       opacity: 0;
-      filter: blur(2px) saturate(1.1);
+      filter: saturate(1.1);
       transition: opacity 1.5s ease-in-out;
       transform: translate(-50%, -50%);
     }
@@ -128,10 +128,15 @@
       font-weight: 300;
       text-shadow: 0 0 20px rgba(255,255,255,0.35), 0 0 40px rgba(255,200,220,0.2);
       opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 1.8s ease, transform 1.8s ease;
+      transform: translateY(20px) scale(0.98);
+      filter: blur(4px);
+      transition:
+        opacity 3.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+        transform 3.6s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 3.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+      will-change: opacity, transform, filter;
     }
-    #messageText.visible { opacity: 1; transform: translateY(0); }
+    #messageText.visible { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 
     #endHint {
       position: fixed;
@@ -318,7 +323,7 @@
       setTimeout(() => {
         messageText.textContent = messages[index];
         messageText.classList.add('visible');
-      }, 200);
+      }, 1400);
     }
 
     function advance() {
@@ -331,7 +336,7 @@
         setTimeout(() => {
           messageText.textContent = "happy birthday, my love";
           messageText.classList.add('visible');
-        }, 200);
+        }, 1400);
       }
     }
 
